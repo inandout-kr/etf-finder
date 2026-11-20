@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETF 파인더 — 내 종목을 가장 많이 담은 ETF 찾기</title>
+<meta name="description" content="종목명을 검색하면 그 종목을 담고 있는 모든 국내 상장 ETF를 보유 비중 순으로 보여줍니다. 매일 전일 종가 기준 업데이트.">
+<!-- ADSENSE: <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXX" crossorigin="anonymous"></script> -->
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+         background:#fff; color:#212529; min-height:100vh; }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 16px; }
+  h1 { font-size:21px; font-weight:700; margin-bottom:4px; letter-spacing:-0.3px; }
+  h1 a { color:#212529; text-decoration:none; }
+  .meta { color:#868e96; font-size:12px; margin-bottom:24px; }
+  .searchbox { position:relative; margin-bottom:24px; }
+  #q { width:100%; padding:13px 16px; font-size:16px; border-radius:8px; border:1px solid #ced4da;
+       background:#fff; color:#212529; outline:none; }
+  #q:focus { border-color:#1c64d9; box-shadow:0 0 0 3px rgba(28,100,217,.1); }
+  #sug { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid #dee2e6;
+         border-radius:8px; z-index:10; display:none; max-height:360px; overflow-y:auto;
+         box-shadow:0 4px 16px rgba(0,0,0,.08); }
+  .sug-item { padding:10px 16px; cursor:pointer; display:flex; justify-content:space-between; }
+  .sug-item:hover, .sug-item.active { background:#f1f3f5; }
+  .sug-item .cnt { color:#868e96; font-size:12px; }
+  .result-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+  .result-head h2 { font-size:18px; font-weight:700; }
+  .result-head .sub { color:#868e96; font-size:13px; }
+  .sortbtns button { background:#fff; color:#495057; border:1px solid #ced4da; padding:5px 12px;
+                     border-radius:6px; cursor:pointer; font-size:12px; margin-left:4px; }
+  .sortbtns button.on { background:#1c64d9; color:#fff; border-color:#1c64d9; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:right; color:#868e96; font-weight:600; font-size:12px; padding:8px 10px;
+       border-bottom:1px solid #dee2e6; white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  td { padding:10px; border-bottom:1px solid #f1f3f5; text-align:right; white-space:nowrap; }
+  td.name { text-align:left; max-width:340px; overflow:hidden; text-overflow:ellipsis; }
+  td.name a { color:#212529; text-decoration:none; }
+  td.name a:hover { color:#1c64d9; text-decoration:underline; }
+  .rank { color:#adb5bd; font-size:12px; }
+  .w { color:#1c64d9; font-weight:700; }
+  .bar { display:inline-block; height:4px; background:#a5c4f3; border-radius:2px; vertical-align:middle; margin-left:6px; }
+  .dim { color:#adb5bd; }
+  .empty { color:#868e96; text-align:center; padding:60px 0; font-size:14px; }
+  .notice { color:#868e96; font-size:12px; margin-bottom:8px; }
+  .adslot { margin:20px 0; min-height:0; text-align:center; }
+  footer { margin-top:48px; padding-top:16px; border-top:1px solid #f1f3f5; color:#adb5bd;
+           font-size:12px; display:flex; gap:16px; flex-wrap:wrap; }
+  footer a { color:#868e96; }
+  .doc { line-height:1.8; font-size:14px; }
+  .doc h2 { font-size:16px; margin:24px 0 8px; }
+  .doc p, .doc li { color:#495057; margin-bottom:8px; }
+  .doc ul { padding-left:20px; }
+  @media (max-width:600px){ .hide-m{display:none;} td,th{padding:8px 6px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><a href="./">ETF 파인더</a></h1>
+  <div class="meta" id="meta">로딩중…</div>
+  <div class="searchbox">
+    <input id="q" placeholder="종목명 입력 (예: 삼성전자, 한미반도체, NVIDIA)" autocomplete="off">
+    <div id="sug"></div>
+  </div>
+  <div class="adslot"><!-- ADSENSE SLOT --></div>
+  <div id="result"><div class="empty">종목을 검색하면 해당 종목을 담고 있는 모든 ETF가 비중순으로 표시됩니다.</div></div>
+  
+<footer>
+  <a href="./">홈</a>
+  <a href="about.html">사이트 소개</a>
+  <a href="privacy.html">개인정보처리방침</a>
+  <span>데이터: 전일 종가 기준, 정보 제공 목적이며 투자 권유가 아닙니다.</span>
+</footer>
+
+</div>
+<script>
+let names = null, curData = null, sortKey = 'weight', selIdx = -1;
+const shardCache = {};
+
+function fnv1a(s){
+  const b = new TextEncoder().encode(s);
+  let h = 2166136261;
+  for (const x of b){ h ^= x; h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+
+fetch('meta.json').then(r=>r.json()).then(m=>{
+  document.getElementById('meta').textContent =
+    '기준일 ' + (m.baseDate||'-') + ' · ETF ' + m.etfCount.toLocaleString() + '개 · 종목 ' + m.stockCount.toLocaleString() + '개 수록';
+});
+
+async function loadNames(){
+  if (!names) names = await (await fetch('names.json')).json();
+  return names;
+}
+
+const q = document.getElementById('q'), sug = document.getElementById('sug');
+let timer = null;
+
+q.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(async () => {
+    const v = q.value.trim().toLowerCase();
+    if (!v) { sug.style.display='none'; return; }
+    const all = await loadNames();
+    const starts = [], contains = [];
+    for (const [n, c] of all) {
+      const ln = n.toLowerCase();
+      if (ln.startsWith(v)) starts.push([n, c]);
+      else if (ln.includes(v)) contains.push([n, c]);
+      if (starts.length >= 15) break;
+    }
+    const items = starts.concat(contains).slice(0, 15);
+    selIdx = -1;
+    if (!items.length) { sug.style.display='none'; return; }
+    sug.innerHTML = items.map(([n, c]) =>
+      '<div class="sug-item" data-name="'+n+'"><span>'+n+'</span><span class="cnt">'+c+'개 ETF</span></div>'
+    ).join('');
+    sug.style.display='block';
+    sug.querySelectorAll('.sug-item').forEach(el =>
+      el.addEventListener('click', () => pick(el.dataset.name)));
+  }, 120);
+});
+
+q.addEventListener('keydown', e => {
+  const items = sug.querySelectorAll('.sug-item');
+  if (e.key === 'ArrowDown' && items.length) { selIdx = Math.min(selIdx+1, items.length-1); paint(items); e.preventDefault(); }
+  else if (e.key === 'ArrowUp' && items.length) { selIdx = Math.max(selIdx-1, 0); paint(items); e.preventDefault(); }
+  else if (e.key === 'Enter') {
+    if (selIdx >= 0 && items[selIdx]) pick(items[selIdx].dataset.name);
+    else if (items.length) pick(items[0].dataset.name);
+  } else if (e.key === 'Escape') sug.style.display='none';
+});
+function paint(items){ items.forEach((el,i)=>el.classList.toggle('active', i===selIdx)); }
+document.addEventListener('click', e => { if (!e.target.closest('.searchbox')) sug.style.display='none'; });
+
+async function pick(name){
+  sug.style.display='none'; q.value = name;
+  const sh = (fnv1a(name) % 256).toString(16).padStart(2, '0');
+  if (!shardCache[sh]) shardCache[sh] = await (await fetch('shard/'+sh+'.json')).json();
+  const rows = shardCache[sh][name];
+  if (!rows) return;
+  curData = { name: name, etfs: rows.map(r => ({
+    etfCode: r[0], etfName: r[1], weight: r[2], count: r[3], marketSum: r[4], amount: r[5]
+  })) };
+  render();
+}
+
+function render(){
+  const d = curData;
+  const rows = [...d.etfs];
+  if (sortKey === 'weight') rows.sort((a,b)=>((b.weight??-1)-(a.weight??-1)) || ((b.count??0)-(a.count??0)));
+  else rows.sort((a,b)=>((b.amount??-1)-(a.amount??-1)) || ((b.count??0)-(a.count??0)));
+  const noWeight = rows.length && rows.every(r=>r.weight==null);
+  const maxW = Math.max(...rows.map(r=>r.weight??0), 0.001);
+  const html = ['<div class="result-head">',
+    '<div><h2>'+d.name+'</h2><span class="sub">'+rows.length+'개 ETF 보유</span></div>',
+    '<div class="sortbtns">',
+    '<button id="sw" class="'+(sortKey==='weight'?'on':'')+'">비중순</button>',
+    '<button id="sa" class="'+(sortKey==='amount'?'on':'')+'">금액순</button>',
+    '</div></div>',
+    noWeight ? '<div class="notice">해외 종목은 비중(%)이 제공되지 않아 1CU당 보유수량 순으로 표시됩니다.</div>' : '',
+    '<table><tr><th>ETF</th><th>비중</th><th class="hide-m">보유수량/1CU</th><th>평가금액(억)</th><th class="hide-m">ETF시총(억)</th></tr>'];
+  rows.forEach((r,i)=>{
+    const w = r.weight==null ? '<span class="dim">-</span>'
+      : '<span class="w">'+r.weight.toFixed(2)+'%</span><span class="bar" style="width:'+Math.round(r.weight/maxW*40)+'px"></span>';
+    html.push('<tr>',
+      '<td class="name"><span class="rank">'+(i+1)+'</span> <a href="https://finance.naver.com/item/main.naver?code='+r.etfCode+'" target="_blank" rel="noopener">'+r.etfName+'</a></td>',
+      '<td>'+w+'</td>',
+      '<td class="hide-m dim">'+(r.count==null?'-':Number(r.count).toLocaleString())+'</td>',
+      '<td>'+(r.amount==null?'<span class="dim">-</span>':r.amount.toLocaleString())+'</td>',
+      '<td class="hide-m dim">'+(r.marketSum==null?'-':Number(r.marketSum).toLocaleString())+'</td>',
+      '</tr>');
+  });
+  html.push('</table>');
+  document.getElementById('result').innerHTML = html.join('');
+  document.getElementById('sw').onclick = ()=>{ sortKey='weight'; render(); };
+  document.getElementById('sa').onclick = ()=>{ sortKey='amount'; render(); };
+}
+</script>
+</body>
+</html>
