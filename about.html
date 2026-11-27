@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사이트 소개 — ETF 파인더</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+         background:#fff; color:#212529; min-height:100vh; }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 16px; }
+  h1 { font-size:21px; font-weight:700; margin-bottom:4px; letter-spacing:-0.3px; }
+  h1 a { color:#212529; text-decoration:none; }
+  .meta { color:#868e96; font-size:12px; margin-bottom:24px; }
+  .searchbox { position:relative; margin-bottom:24px; }
+  #q { width:100%; padding:13px 16px; font-size:16px; border-radius:8px; border:1px solid #ced4da;
+       background:#fff; color:#212529; outline:none; }
+  #q:focus { border-color:#1c64d9; box-shadow:0 0 0 3px rgba(28,100,217,.1); }
+  #sug { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid #dee2e6;
+         border-radius:8px; z-index:10; display:none; max-height:360px; overflow-y:auto;
+         box-shadow:0 4px 16px rgba(0,0,0,.08); }
+  .sug-item { padding:10px 16px; cursor:pointer; display:flex; justify-content:space-between; }
+  .sug-item:hover, .sug-item.active { background:#f1f3f5; }
+  .sug-item .cnt { color:#868e96; font-size:12px; }
+  .result-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+  .result-head h2 { font-size:18px; font-weight:700; }
+  .result-head .sub { color:#868e96; font-size:13px; }
+  .sortbtns button { background:#fff; color:#495057; border:1px solid #ced4da; padding:5px 12px;
+                     border-radius:6px; cursor:pointer; font-size:12px; margin-left:4px; }
+  .sortbtns button.on { background:#1c64d9; color:#fff; border-color:#1c64d9; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:right; color:#868e96; font-weight:600; font-size:12px; padding:8px 10px;
+       border-bottom:1px solid #dee2e6; white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  td { padding:10px; border-bottom:1px solid #f1f3f5; text-align:right; white-space:nowrap; }
+  td.name { text-align:left; max-width:340px; overflow:hidden; text-overflow:ellipsis; }
+  td.name a { color:#212529; text-decoration:none; }
+  td.name a:hover { color:#1c64d9; text-decoration:underline; }
+  .rank { color:#adb5bd; font-size:12px; }
+  .w { color:#1c64d9; font-weight:700; }
+  .bar { display:inline-block; height:4px; background:#a5c4f3; border-radius:2px; vertical-align:middle; margin-left:6px; }
+  .dim { color:#adb5bd; }
+  .empty { color:#868e96; text-align:center; padding:60px 0; font-size:14px; }
+  .notice { color:#868e96; font-size:12px; margin-bottom:8px; }
+  .adslot { margin:20px 0; min-height:0; text-align:center; }
+  footer { margin-top:48px; padding-top:16px; border-top:1px solid #f1f3f5; color:#adb5bd;
+           font-size:12px; display:flex; gap:16px; flex-wrap:wrap; }
+  footer a { color:#868e96; }
+  .doc { line-height:1.8; font-size:14px; }
+  .doc h2 { font-size:16px; margin:24px 0 8px; }
+  .doc p, .doc li { color:#495057; margin-bottom:8px; }
+  .doc ul { padding-left:20px; }
+  @media (max-width:600px){ .hide-m{display:none;} td,th{padding:8px 6px;} }
+</style>
+</head>
+<body>
+<div class="wrap doc">
+  <h1><a href="./">ETF 파인더</a></h1>
+  <div class="meta">사이트 소개</div>
+  
+<h2>ETF 파인더란?</h2>
+<p>관심 있는 종목을 검색하면, 그 종목을 담고 있는 <b>모든 국내 상장 ETF</b>를 보유 비중이 높은 순서로 보여주는 서비스입니다.
+국내 상장 ETF 전체(1,100개 이상)의 구성종목(PDF)을 매일 전일 종가 기준으로 수집합니다.</p>
+
+<h2>이런 분께 유용합니다</h2>
+<ul>
+  <li>특정 종목에 투자하고 싶은데 개별주 대신 ETF로 분산 투자하고 싶은 분</li>
+  <li>내가 보유한 ETF에 특정 종목이 얼마나 들어있는지 비교하고 싶은 분</li>
+  <li>같은 테마의 ETF 중 원하는 종목의 비중이 가장 높은 상품을 고르고 싶은 분</li>
+</ul>
+
+<h2>사용법</h2>
+<ul>
+  <li>검색창에 종목명을 입력하세요 (예: 삼성전자, 한미반도체). 해외 주식은 영문명으로 검색합니다 (예: NVIDIA).</li>
+  <li><b>비중순</b>: ETF 자산에서 해당 종목이 차지하는 비율 순 / <b>금액순</b>: 비중 × ETF 시가총액로 추정한 평가금액 순</li>
+  <li>해외 종목은 비중(%) 데이터가 제공되지 않아 1CU(설정단위)당 보유수량 순으로 표시됩니다.</li>
+</ul>
+
+<h2>유의사항</h2>
+<p>본 사이트의 정보는 전일 종가 기준이며, 정보 제공 목적으로만 제공됩니다.
+투자 권유가 아니며, 데이터의 정확성을 보장하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</p>
+
+  
+<footer>
+  <a href="./">홈</a>
+  <a href="about.html">사이트 소개</a>
+  <a href="privacy.html">개인정보처리방침</a>
+  <span>데이터: 전일 종가 기준, 정보 제공 목적이며 투자 권유가 아닙니다.</span>
+</footer>
+
+</div>
+</body>
+</html>
